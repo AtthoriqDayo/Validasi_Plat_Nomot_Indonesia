@@ -28,20 +28,27 @@
 
             <h3 id="statusText" style="margin-top: 30px; height: 30px; color: var(--neon-cyan);">WAITING FOR INPUT...</h3>
 
-            <div class="dfa-container">
-                <div id="node-q0" class="node">START</div>
-                <div id="node-q_check_region" class="node">Reg?</div>
-                <div id="node-q_region_done" class="node">RegOK</div>
-                <div id="node-q_space1" class="node">_</div>
-                <div id="node-q_digit1" class="node">#1</div>
-                <div id="node-q_digit2" class="node">#2</div>
-                <div id="node-q_digit3" class="node">#3</div>
-                <div id="node-q_digit4" class="node">#4</div>
-                <div id="node-q_space2" class="node">_</div>
-                <div id="node-q_final1" class="node">Suf1</div>
-                <div id="node-q_final2" class="node">Suf2</div>
-                <div id="node-q_final3" class="node">Suf3</div>
-                <div id="node-TRAP" class="node" style="border-color:red;">TRAP</div>
+            <div class="dfa-container" id="dfaContainer">
+                <svg id="dfa-lines-layer"></svg>
+
+                <div class="dfa-row main-flow">
+                    <div id="node-q0" class="node">START</div>
+                    <div id="node-q_check_region" class="node">Reg?</div>
+                    <div id="node-q_region_done" class="node">RegOK</div>
+                    <div id="node-q_space1" class="node">_</div>
+                    <div id="node-q_digit1" class="node">#1</div>
+                    <div id="node-q_digit2" class="node">#2</div>
+                    <div id="node-q_digit3" class="node">#3</div>
+                    <div id="node-q_digit4" class="node">#4</div>
+                    <div id="node-q_space2" class="node">_</div>
+                    <div id="node-q_final1" class="node">Suf1</div>
+                    <div id="node-q_final2" class="node">Suf2</div>
+                    <div id="node-q_final3" class="node">Suf3</div>
+                </div>
+
+                <div class="dfa-row trap-flow" style="margin-top: 100px;">
+                    <div id="node-TRAP" class="node trap-node">TRAP</div>
+                </div>
             </div>
         </div>
 

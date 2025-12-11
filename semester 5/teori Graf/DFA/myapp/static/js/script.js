@@ -8,17 +8,153 @@ function showSection(id) {
     document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
 }
 
-/* --- FEATURE 1: DFA VISUALIZER (Adjusted) --- */
+
+/* --- PETA KONEKSI DFA (Definisi Struktur) --- */
+const dfaTransitions = [
+    // Jalur Utama (Valid)
+    { from: 'node-q0', to: 'node-q_check_region' },
+    { from: 'node-q_check_region', to: 'node-q_space1' }, // spasi setelah 1 huruf
+    { from: 'node-q_check_region', to: 'node-q_region_done' }, // huruf ke-2
+    { from: 'node-q_region_done', to: 'node-q_space1' },
+    { from: 'node-q_space1', to: 'node-q_digit1' },
+    { from: 'node-q_digit1', to: 'node-q_digit2' },
+    { from: 'node-q_digit1', to: 'node-q_space2' }, // 1 angka lalu spasi
+    { from: 'node-q_digit2', to: 'node-q_digit3' },
+    { from: 'node-q_digit2', to: 'node-q_space2' }, // 2 angka lalu spasi
+    { from: 'node-q_digit3', to: 'node-q_digit4' },
+    { from: 'node-q_digit3', to: 'node-q_space2' }, // 3 angka lalu spasi
+    { from: 'node-q_digit4', to: 'node-q_space2' },
+    { from: 'node-q_space2', to: 'node-q_final1' },
+    { from: 'node-q_final1', to: 'node-q_final2' },
+    { from: 'node-q_final2', to: 'node-q_final3' }
+];
+
+/* --- INIT VISUALIZER --- */
+document.addEventListener('DOMContentLoaded', () => {
+    // Gambar garis statis saat halaman dimuat
+    setTimeout(drawDFAGraph, 500); 
+    // Gambar ulang jika window di-resize (responsif)
+    window.addEventListener('resize', drawDFAGraph);
+});
+
+/* --- FUNGSI MENGGAMBAR GARIS (SVG ENGINE) --- */
+function drawDFAGraph() {
+    const svg = document.getElementById('dfa-lines-layer');
+    const container = document.getElementById('dfaContainer');
+    if(!svg || !container) return;
+
+    svg.innerHTML = ''; // Reset garis
+
+    // Definisikan Arrowhead Marker di SVG
+    svg.innerHTML = `
+        <defs>
+            <marker id="arrow-cyan" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#00f3ff" />
+            </marker>
+            <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#ff0055" />
+            </marker>
+        </defs>
+    `;
+
+    // 1. Gambar Garis Valid (DFA Transitions)
+    dfaTransitions.forEach(conn => {
+        createLine(conn.from, conn.to, 'valid');
+    });
+
+    // 2. Gambar Garis ke TRAP (Semua node valid punya potensi ke TRAP)
+    const allNodes = document.querySelectorAll('.node:not(#node-TRAP)');
+    allNodes.forEach(node => {
+        createLine(node.id, 'node-TRAP', 'trap');
+    });
+}
+/* --- FUNGSI MENGGAMBAR GARIS (Updated: Edge-to-Edge) --- */
+function createLine(id1, id2, type) {
+    const el1 = document.getElementById(id1);
+    const el2 = document.getElementById(id2);
+    const svg = document.getElementById('dfa-lines-layer');
+    
+    if (!el1 || !el2) return;
+
+    // 1. Ambil Koordinat Pusat Node
+    const rect1 = el1.getBoundingClientRect();
+    const rect2 = el2.getBoundingClientRect();
+    const contRect = document.getElementById('dfaContainer').getBoundingClientRect();
+
+    // Pusat Node 1
+    const x1 = rect1.left + rect1.width / 2 - contRect.left;
+    const y1 = rect1.top + rect1.height / 2 - contRect.top;
+    
+    // Pusat Node 2
+    const x2 = rect2.left + rect2.width / 2 - contRect.left;
+    const y2 = rect2.top + rect2.height / 2 - contRect.top;
+
+    // 2. HITUNG OFFSET (Agar garis mulai dari pinggir, bukan tengah)
+    // Radius node = 30px (karena width 60px). Kita tambah 5px jarak aman.
+    const r = 42.5; 
+    
+    // Hitung jarak dan sudut (Vektor)
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    // Jika jarak 0 (error), hentikan
+    if (dist === 0) return;
+
+    // Unit Vektor (Arah)
+    const ux = dx / dist;
+    const uy = dy / dist;
+
+    // Koordinat Baru (Di pinggir lingkaran)
+    // Start: Geser dari pusat 1 ke arah 2 sejauh radius
+    const startX = x1 + (ux * r);
+    const startY = y1 + (uy * r);
+    
+    // End: Geser dari pusat 2 mundur ke arah 1 sejauh radius
+    const endX = x2 - (ux * r);
+    const endY = y2 - (uy * r);
+
+    // 3. Buat Garis SVG
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    
+    let d = '';
+    if (type === 'trap') {
+        // Logika Kurva untuk TRAP:
+        // Kita gunakan start/end yang sudah dipotong agar rapi
+        // Control point ditarik sedikit ke bawah agar melengkung
+        const ctrlX = startX; 
+        const ctrlY = endY - 50; 
+        d = `M${startX},${startY} Q${ctrlX},${ctrlY} ${endX},${endY}`;
+    } else {
+        // Garis Lurus untuk flow utama
+        d = `M${startX},${startY} L${endX},${endY}`;
+    }
+
+    path.setAttribute('d', d);
+    path.setAttribute('id', `line-${id1}-${id2}`);
+    path.classList.add('connection-line');
+    
+    if (type === 'trap') {
+        path.classList.add('to-trap');
+        path.setAttribute('marker-end', 'url(#arrow-pink)');
+    } else {
+        path.setAttribute('marker-end', 'url(#arrow-cyan)');
+    }
+
+    svg.appendChild(path);
+}
+
+/* --- LOGIKA RUN VISUALIZER (UPDATED) --- */
 async function runVisualizer() {
     const input = document.getElementById('plateInput').value;
     const statusText = document.getElementById('statusText');
     
     if (!input) return;
 
-    // Reset UI
-    document.querySelectorAll('.node').forEach(n => {
-        n.className = 'node'; // Remove all active/trap classes
-    });
+    // Reset UI (Hapus semua kelas aktif)
+    document.querySelectorAll('.node').forEach(n => n.classList.remove('active-neon', 'trap-state'));
+    document.querySelectorAll('.connection-line').forEach(l => l.classList.remove('active-path', 'active-trap'));
+
     statusText.innerText = "INITIALIZING PROTOCOLS...";
     statusText.style.color = "var(--text-main)";
 
@@ -26,43 +162,59 @@ async function runVisualizer() {
         const response = await fetch(`/api/validate-dfa/?plate=${encodeURIComponent(input)}`);
         const data = await response.json();
 
-        // 1. Loop through history
+        let prevState = null;
+
+        // Loop Animasi
         for (let step of data.history) {
-            const nodeId = 'node-' + step.state;
-            const nodeEl = document.getElementById(nodeId);
+            const currState = 'node-' + step.state;
+            const currNode = document.getElementById(currState);
             
-            if (nodeEl) {
-                // Highlight Logic
+            // 1. Highlight Garis (Transisi dari Prev -> Curr)
+            if (prevState) {
+                // Coba cari garis valid
+                let lineId = `line-${prevState}-${currState}`;
+                let lineEl = document.getElementById(lineId);
+                
+                // Jika tidak ada garis langsung (berarti ini masuk ke TRAP secara logika aplikasi)
+                if (!lineEl && step.state === 'TRAP') {
+                    lineId = `line-${prevState}-node-TRAP`;
+                    lineEl = document.getElementById(lineId);
+                }
+
+                if (lineEl) {
+                    const isTrap = step.state === 'TRAP';
+                    lineEl.classList.add(isTrap ? 'active-trap' : 'active-path');
+                }
+            }
+
+            // 2. Highlight Node
+            if (currNode) {
                 if (step.state === 'TRAP') {
-                    nodeEl.classList.add('trap-state');
-                    // Show the specific error reason
+                    currNode.classList.add('trap-state');
                     statusText.innerText = `ERROR: ${step.reason}`; 
                     statusText.style.color = "var(--neon-pink)";
                 } else {
-                    nodeEl.classList.add('active-neon');
-                    const char = step.input ? `Processing: '${step.input}'` : 'Start';
+                    currNode.classList.add('active-neon');
+                    const char = step.input ? `Input: '${step.input}'` : 'Start';
                     statusText.innerText = `${char} >> State: ${step.state}`;
-                    statusText.style.color = "var(--text-main)";
-                }
-
-                // 2. SLOW DOWN: Increased from 500ms to 1200ms
-                await new Promise(r => setTimeout(r, 1200));
-                
-                // Remove highlight if not trapped
-                if (step.state !== 'TRAP') {
-                    nodeEl.classList.remove('active-neon');
                 }
             }
+
+            // Jeda waktu agar mata bisa mengikuti garis
+            await new Promise(r => setTimeout(r, 800));
+            
+            // Persiapan step berikutnya (Matikan highlight garis sebelumnya agar rapi)
+             if (prevState) {
+                 // Opsional: Jika ingin garis tetap menyala sebagai "jejak", hapus bagian remove ini
+                 // document.getElementById(...)?.classList.remove('active-path');
+             }
+             prevState = currState;
         }
 
-        // Final Verification
+        // Final Result Text
         if (data.is_valid) {
             statusText.innerText = "ACCESS GRANTED: VALID PLATE";
             statusText.style.color = "var(--neon-green)";
-        } else if (!data.is_valid && data.history[data.history.length-1].state !== 'TRAP') {
-            // Case where input ran out but wasn't in a final state
-            statusText.innerText = "INCOMPLETE INPUT";
-            statusText.style.color = "var(--neon-pink)";
         }
 
     } catch (e) {
