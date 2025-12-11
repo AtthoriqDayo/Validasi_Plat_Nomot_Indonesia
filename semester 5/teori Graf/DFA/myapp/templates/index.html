@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DFA Plat Nomor // SYSTEM ONLINE</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">PROF. QIU LABS</div>
+        <div class="nav-item active" onclick="showSection('visualizer')">1. DFA Visualizer</div>
+        <div class="nav-item" onclick="showSection('performance')">2. Speed Benchmark</div>
+        <div class="nav-item" onclick="showSection('ocr')">3. Cyber Scan (OCR)</div>
+    </div>
+
+    <div class="main-stage">
+        
+        <div id="section-visualizer" class="section active">
+            <h2>DFA State Analysis</h2>
+            <p>Enter a License Plate to visualize the state transitions.</p>
+            
+            <div style="display:flex;">
+                <input type="text" id="plateInput" class="cyber-input" placeholder="e.g. B 1234 XY" autocomplete="off">
+                <button onclick="runVisualizer()" class="cyber-btn">ANALYZE</button>
+            </div>
+
+            <h3 id="statusText" style="margin-top: 30px; height: 30px; color: var(--neon-cyan);">WAITING FOR INPUT...</h3>
+
+            <div class="dfa-container">
+                <div id="node-q0" class="node">START</div>
+                <div id="node-q_check_region" class="node">Reg?</div>
+                <div id="node-q_region_done" class="node">RegOK</div>
+                <div id="node-q_space1" class="node">_</div>
+                <div id="node-q_digit1" class="node">#1</div>
+                <div id="node-q_digit2" class="node">#2</div>
+                <div id="node-q_digit3" class="node">#3</div>
+                <div id="node-q_digit4" class="node">#4</div>
+                <div id="node-q_space2" class="node">_</div>
+                <div id="node-q_final1" class="node">Suf1</div>
+                <div id="node-q_final2" class="node">Suf2</div>
+                <div id="node-q_final3" class="node">Suf3</div>
+                <div id="node-TRAP" class="node" style="border-color:red;">TRAP</div>
+            </div>
+        </div>
+
+        <div id="section-performance" class="section">
+            <h2>Algorithm vs Database</h2>
+            
+            <div style="background: rgba(0,0,0,0.3); padding: 20px; border: 1px solid #333; margin-bottom: 20px;">
+                <h3 style="margin-top:0; font-size: 1rem; color: var(--neon-cyan)">1. CONFIGURE PAYLOAD</h3>
+                
+                <div class="chip-container" onclick="document.getElementById('plate-typer').focus()">
+                    <input type="text" id="plate-typer" class="chip-input" placeholder="Type Plate & Press Enter..." autocomplete="off">
+                </div>
+                
+                <div style="display: flex; gap: 20px; margin-top: 15px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">OPTIONAL: APPEND CSV</div>
+                        <input type="file" id="bench-csv" accept=".csv, .txt" style="color: #888; font-size: 0.9rem;">
+                    </div>
+
+                    <div style="width: 150px;">
+                        <div style="font-size: 0.8rem; color: var(--neon-pink); margin-bottom: 5px;">REPLICATION</div>
+                        <input type="number" id="bench-multiplier" class="cyber-input" value="1" min="1" 
+                               style="width: 100%; padding: 10px; font-size: 1.1rem; text-align: center;">
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="show-details" style="transform: scale(1.5); accent-color: var(--neon-cyan);">
+                    <label for="show-details" style="color: #aaa; cursor: pointer;">Show Detailed Valid/Invalid Log (Slower for large data)</label>
+                </div>
+            </div>
+
+            <button id="btn-benchmark" onclick="runBenchmark()" class="cyber-btn" style="width: 100%;">
+                INITIATE STRESS TEST
+            </button>
+            <div id="progress-timer" style="text-align: center; color: var(--neon-cyan); margin-top: 10px; height: 20px;"></div>
+            
+            <div style="margin-top: 40px;">
+                <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+                    <span>DFA ALGORITHM (CPU)</span>
+                </div>
+                <div class="perf-bar-container">
+                    <div id="bar-dfa" class="perf-bar bar-dfa">0ms</div>
+                </div>
+
+                <div style="margin-bottom: 5px; margin-top: 20px;">DATABASE LOOKUP (I/O)</div>
+                <div class="perf-bar-container">
+                    <div id="bar-db" class="perf-bar bar-db">0ms</div>
+                </div>
+            </div>
+
+            <div id="benchmark-result" style="margin-top: 20px;"></div>
+
+            <div id="detailed-log" class="results-box">
+                </div>
+        </div>
+
+        <div id="section-ocr" class="section">
+            <h2>Visual Recognition Unit</h2>
+            <p>Upload an image of a license plate.</p>
+            
+            <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                CLICK TO UPLOAD IMAGE
+                <input type="file" id="fileInput" hidden onchange="handleFileUpload(this)">
+            </div>
+
+            <div id="ocr-result" style="margin-top: 30px; text-align: center;">
+                </div>
+        </div>
+
+    </div>
+
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>
