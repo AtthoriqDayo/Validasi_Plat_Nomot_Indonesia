@@ -191,12 +191,25 @@ async function runVisualizer() {
             if (currNode) {
                 if (step.state === 'TRAP') {
                     currNode.classList.add('trap-state');
-                    statusText.innerText = `ERROR: ${step.reason}`; 
+                    statusText.innerText = `DITOLAK: ${step.reason}`; 
                     statusText.style.color = "var(--neon-pink)";
                 } else {
                     currNode.classList.add('active-neon');
-                    const char = step.input ? `Input: '${step.input}'` : 'Start';
-                    statusText.innerText = `${char} >> State: ${step.state}`;
+                    
+                    // --- PROF QIU FIX START ---
+                    // Handle "Input Incomplete" step (input is null, but it's not Start)
+                    if (step.input === null && step.reason && step.reason !== "Start") {
+                        statusText.innerText = `STATUS: ${step.reason}`; // Displays "Input tidak lengkap"
+                        statusText.style.color = "#ffcc00"; // Orange/Yellow for warning
+                    } 
+                    else {
+                        // Standard processing
+                        const char = step.input ? `Input: '${step.input}'` : 'Start';
+                        statusText.innerText = `${char} >> State: ${step.state}`;
+                        statusText.style.color = "var(--neon-cyan)";
+                    }
+                    // --- PROF QIU FIX END ---
+
                 }
             }
 
@@ -213,13 +226,13 @@ async function runVisualizer() {
 
         // Final Result Text
         if (data.is_valid) {
-            statusText.innerText = "ACCESS GRANTED: VALID PLATE";
+            statusText.innerText = "DITERIMA: PLAT VALID";
             statusText.style.color = "var(--neon-green)";
         }
 
     } catch (e) {
         console.error(e);
-        statusText.innerText = "SYSTEM ERROR";
+        statusText.innerText = "SISTEM ERROR";
     }
 }
 
@@ -318,7 +331,7 @@ async function runBenchmark() {
     // Start "Alive" Timer
     const timerInterval = setInterval(() => {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        timerDisplay.innerText = `SYSTEM PROCESSING... [ TIME ELAPSED: ${elapsed}s ]`;
+        timerDisplay.innerText = `SEDANG DIPROSES... [ TIME ELAPSED: ${elapsed}s ]`;
     }, 100);
 
     try {
@@ -335,7 +348,7 @@ async function runBenchmark() {
         
         // Stop Timer
         clearInterval(timerInterval);
-        timerDisplay.innerText = "PROCESS COMPLETE.";
+        timerDisplay.innerText = "PROSES SELESAI.";
 
         // 3. Render Stats
         const max = Math.max(data.dfa_duration_ms, data.db_duration_ms);
@@ -345,7 +358,7 @@ async function runBenchmark() {
         document.getElementById('bar-db').innerText = data.db_duration_ms + " ms";
         
         resultArea.innerHTML = `
-            <h3 style="color: var(--neon-cyan)">WINNER: ${data.winner}</h3>
+            <h3 style="color: var(--neon-cyan)">TERCEPAT: ${data.winner}</h3>
             <p>Analyzed <strong>${data.count.toLocaleString()}</strong> items.</p>
         `;
 
@@ -381,7 +394,7 @@ async function runBenchmark() {
 
     } catch (e) {
         clearInterval(timerInterval);
-        timerDisplay.innerText = "SYSTEM FAILURE";
+        timerDisplay.innerText = "SISTEM ERROR";
         resultArea.innerHTML = `<span style="color:red">Error: ${e.message}</span>`;
     }
 
@@ -395,7 +408,7 @@ async function handleFileUpload(input) {
         formData.append('image', input.files[0]);
 
         const resultDiv = document.getElementById('ocr-result');
-        resultDiv.innerHTML = "SCANNING IMAGE...";
+        resultDiv.innerHTML = "MENGESCAN GAMBAR...";
 
         const response = await fetch('/api/ocr-scan/', {
             method: 'POST',

@@ -26,13 +26,11 @@ class DFA_PlatNomor_Web:
         if not raw_text:
             return ""
             
-        # 1. Strip whitespace and uppercase
-        s = raw_text.strip().upper()
+        s = raw_text.upper().lstrip()
         
         # 2. Remove all internal whitespace to check structure
         s_clean = re.sub(r'\s+', '', s)
         
-        # 3. Regex capture groups to format it nicely: (Letters)(Numbers)(Letters)
         match = re.match(r'^([A-Z]{1,2})([0-9]{1,4})([A-Z]{1,3})$', s_clean)
         
         if match:
